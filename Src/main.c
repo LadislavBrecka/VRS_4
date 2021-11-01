@@ -25,7 +25,7 @@
 void SystemClock_Config(void);
 uint8_t check_button_state(GPIO_TypeDef* PORT, uint8_t PIN);
 
-uint8_t switch_state = 0;
+uint8_t switch_state = 1;
 
 int main(void)
 {
@@ -58,8 +58,13 @@ int main(void)
   //Enable interrupt from EXTI line 4
   EXTI->IMR |= EXTI_IMR_MR4;
   //Set EXTI trigger to falling edge
-  EXTI->RTSR &= ~(EXTI_IMR_MR4);
-  EXTI->FTSR |= EXTI_IMR_MR4;
+  if(BUTTON_EXTI_TRIGGER == TRIGGER_FALL){
+	  EXTI->FTSR &= ~(EXTI_IMR_MR4);
+	  EXTI->RTSR |= EXTI_IMR_MR4;
+  }else{
+	  EXTI->RTSR &= ~(EXTI_IMR_MR4);
+	  EXTI->FTSR |= EXTI_IMR_MR4;
+  }
 
 
   /* Configure GPIOB-4 pin as an input pin - button */
@@ -132,24 +137,38 @@ void SystemClock_Config(void)
 }
 
 
+
+
+
+
 uint8_t checkButtonState(GPIO_TypeDef* PORT, uint8_t PIN, uint8_t edge, uint8_t samples_window, uint8_t samples_required)
 {
 	uint8_t button_state = 0, timeout = 0;
+	int state =0;
+
 
 	    while(button_state < BUTTON_EXTI_SAMPLES_REQUIRED && timeout < BUTTON_EXTI_SAMPLES_WINDOW)
 	    {
-	        if((PORT->IDR & (1 << PIN)) == edge)
-	        {
-	            button_state += 1;
-	        }
-	        else
-	        {
-	            button_state = 0;
-	        }
+	    		if(edge == TRIGGER_FALL){
+	    			state = (PORT->IDR & (1 << PIN));
+	    		}else{
+	    			state = !(PORT->IDR & (1 << PIN));
+	    		}
+				if(state)
+				{
+					button_state += 1;
+				}else{
+					button_state = 0;
+				}
 
-	        timeout += 1;
-	        LL_mDelay(1);
+				timeout += 1;
+				LL_mDelay(1);
+
 	    }
+
+
+
+
 
 	    if((button_state >= BUTTON_EXTI_SAMPLES_REQUIRED) && (timeout <= BUTTON_EXTI_SAMPLES_WINDOW))
 	    {
