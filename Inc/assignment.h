@@ -15,10 +15,10 @@
 #define		GPIO_PIN_BUTTON					4
 
 // defines for "checkButtonState"
-#define		TRIGGER_RISE					0
-#define		TRIGGER_FALL					1
+#define		TRIGGER_RISE					1		// state of button, not real input state
+#define		TRIGGER_FALL					0       // state of button, not real input state
 
-#define		BUTTON_EXTI_TRIGGER				TRIGGER_FALL
+#define		BUTTON_EXTI_TRIGGER				TRIGGER_RISE
 #define		BUTTON_EXTI_SAMPLES_WINDOW		30
 #define		BUTTON_EXTI_SAMPLES_REQUIRED	20
 

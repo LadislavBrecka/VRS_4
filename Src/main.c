@@ -25,7 +25,7 @@
 void SystemClock_Config(void);
 uint8_t check_button_state(GPIO_TypeDef* PORT, uint8_t PIN);
 
-uint8_t switch_state = 1;
+uint8_t switch_state = 0;
 
 int main(void)
 {
@@ -57,7 +57,11 @@ int main(void)
 
   //Enable interrupt from EXTI line 4
   EXTI->IMR |= EXTI_IMR_MR4;
-  //Set EXTI trigger to falling edge
+  //Set EXTI trigger to falling edge or rising edge
+  // Because we use pull up resistor, we are using negated logic
+  // If we want to trigger rising edge, we are thinking about going from 0 to 1, so we must push button
+  // Because of pull up resitor, when we push button, input will go from 1 to 0, which is basically falling edge
+  // so if we want to trigger on RISING EDGE of our button, we must set trigger for falling edge of the input
   if(BUTTON_EXTI_TRIGGER == TRIGGER_FALL){
 	  EXTI->FTSR &= ~(EXTI_IMR_MR4);
 	  EXTI->RTSR |= EXTI_IMR_MR4;
@@ -149,26 +153,17 @@ uint8_t checkButtonState(GPIO_TypeDef* PORT, uint8_t PIN, uint8_t edge, uint8_t 
 
 	    while(button_state < BUTTON_EXTI_SAMPLES_REQUIRED && timeout < BUTTON_EXTI_SAMPLES_WINDOW)
 	    {
-	    		if(edge == TRIGGER_FALL){
-	    			state = (PORT->IDR & (1 << PIN));
-	    		}else{
-	    			state = !(PORT->IDR & (1 << PIN));
-	    		}
-				if(state)
-				{
-					button_state += 1;
-				}else{
-					button_state = 0;
-				}
+	    	// there we are negationing real input, because we want to know state of button in non-reverted logic
+	    		uint8_t input = !(PORT->IDR & (1 << PIN));
+	    		if(edge == input)
+	    			button_state += 1;
+	    		else
+	    			button_state = 0;
 
 				timeout += 1;
 				LL_mDelay(1);
 
 	    }
-
-
-
-
 
 	    if((button_state >= BUTTON_EXTI_SAMPLES_REQUIRED) && (timeout <= BUTTON_EXTI_SAMPLES_WINDOW))
 	    {
